@@ -47,19 +47,18 @@ def game():
 
                     aiming = True
 
+                if event.key == pygame.K_d:
+                    settings.DEBUG = True
+
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LCTRL and aiming:
                     aiming = False
 
+                if event.key == pygame.K_d:
+                    settings.DEBUG = False
+
             if event.type == pygame.QUIT:
                 running = False
-
-        key = pygame.key.get_pressed()
-
-        if key[pygame.K_d] and not settings.DEBUG:
-            settings.DEBUG = True
-        elif key[pygame.K_d] and settings.DEBUG:
-            settings.DEBUG = False
 
         Table.draw(screen)
 
@@ -84,13 +83,10 @@ def game():
                     # min speed = 0.5, max speed = 6
                     speed = min(6, max(0.5, (_previous_y_diff - y_diff) / dt))
 
-                    # ???
-
                 _previous_y_diff = y_diff
 
                 # about the time the cue hits the cue ball
                 if y_diff <= -12.0:
-                    print(speed)
                     x_impulse = math.cos(math.radians(cue.angle))
                     y_impulse = math.sin(math.radians(cue.angle))
                     cue_ball.body.apply_impulse_at_local_point((2000 * -x_impulse * speed, 2000 * y_impulse * speed), (0, 0))
