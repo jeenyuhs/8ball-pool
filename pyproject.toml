@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "8ball-pool"
+version = "0.1.0"
+description = ""
+authors = ["Simon G. <45692977+jeenyuhs@users.noreply.github.com>"]
+readme = "README.md"
+
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pygame = "^2.6.1"
+pymunk = "^6.9.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
