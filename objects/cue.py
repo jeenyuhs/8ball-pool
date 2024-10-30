@@ -9,9 +9,9 @@ class Cue:
         self.rect = self.image.get_rect()
         self.rect.center = position
 
-    def draw(self, screen) -> None:
+    def draw(self, surface) -> None:
         self.image = pygame.transform.rotate(self.referenced_image, self.angle)
-        screen.blit(
+        surface.blit(
             self.image, 
             (
                 self.rect.centerx - self.image.get_width() / 2, 

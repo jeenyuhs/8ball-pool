@@ -1,31 +1,40 @@
+from enum import IntEnum
 import pymunk
 
+import settings
 import utils
 
+class BallType(IntEnum):
+    CUE = 0
+    SOLID = 1
+    STRIPE = 2
 
-class Ball:
-    # def __init__(self) -> None:
-    #     self.x = 0
-    #     self.y = 0
-    #     self.dx = 0
-    #     self.dy = 0
+    EIGHT_BALL = 3
 
-    #     self.speed = 0
-    #     self.angle = 0
+class Ball(pymunk.Shape):
+    def __init__(self, shape: pymunk.Shape) -> None:
+        super().__init__(shape)
 
-    @staticmethod
-    def create(position: tuple[int, int, int]) -> pymunk.Shape:
+        self.type: BallType = BallType.SOLID
+        self.image = None 
+
+    @classmethod
+    def create(cls, position: tuple[int, int, int], type: BallType) -> "Ball":
         body = pymunk.Body()
         body.position = position
 
-        shape = pymunk.Circle(body, 18.75)
-        shape.mass = 5
+        shape = pymunk.Circle(body, settings.BALL_RADIUS)
+        shape.mass = 1
         shape.elasticity = 0.8
 
-        pivot = pymunk.PivotJoint(utils.SPACE.static_body, body, (0, 0), (0 , 0))
+        pivot = pymunk.PivotJoint(utils.SPACE.static_body, body, (0, 0), (0, 0))
         pivot.max_bias = 0
-        pivot.max_force = 1000
+        pivot.max_force = 2000
 
         utils.SPACE.add(body, shape, pivot)
-        return shape
+
+        ball = cls(shape)
+        ball.type = type
+
+        return ball
 

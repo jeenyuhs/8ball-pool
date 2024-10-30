@@ -1,61 +1,23 @@
 import pymunk
 import pymunk.pygame_util
 
-import settings
-
-
 SPACE = pymunk.Space()
 
+SLABS = (
+    ((122, 79), (146, 100), (761, 100), (766, 86), (766, 77)),
+    ((830, 77), (830, 86), (834, 100), (1451, 100), (1476, 77)),
+    ((1520, 117), (1495, 145), (1495, 746), (1520, 775)),
+    ((1477, 816), (1452, 795), (834, 795), (830, 815)),
+    ((766, 816), (766, 810), (762, 795), (144, 795), (119, 816)),
+    ((77, 774), (100, 751), (100, 147), (78, 117))
+)
+
 def initialize_slab_collision_detection() -> None:
-    # redo
-    BORDER_THICKNESS = 50
-    POCKET_RADIUS = 30
-    LENGTH_OF_SLABS = 20
-
-    slab_positions = (
-        (
-            (BORDER_THICKNESS + POCKET_RADIUS, BORDER_THICKNESS),
-            (BORDER_THICKNESS + POCKET_RADIUS + 15, BORDER_THICKNESS + LENGTH_OF_SLABS),
-            (settings.SCREEN_WIDTH // 2 - POCKET_RADIUS - 5, BORDER_THICKNESS + LENGTH_OF_SLABS),
-            (settings.SCREEN_WIDTH // 2 - POCKET_RADIUS + 1.2, BORDER_THICKNESS),
-        ),
-        (
-            (settings.SCREEN_WIDTH // 2 + POCKET_RADIUS - 1.2, BORDER_THICKNESS),
-            (settings.SCREEN_WIDTH // 2 + POCKET_RADIUS + 5, BORDER_THICKNESS + LENGTH_OF_SLABS),
-            (settings.SCREEN_WIDTH - BORDER_THICKNESS - POCKET_RADIUS - 20, BORDER_THICKNESS + LENGTH_OF_SLABS),
-            (settings.SCREEN_WIDTH - BORDER_THICKNESS - POCKET_RADIUS, BORDER_THICKNESS),
-        ),
-        (
-            (settings.SCREEN_WIDTH - BORDER_THICKNESS, BORDER_THICKNESS + POCKET_RADIUS),
-            (settings.SCREEN_WIDTH - BORDER_THICKNESS - LENGTH_OF_SLABS, BORDER_THICKNESS + POCKET_RADIUS + 20),
-            (settings.SCREEN_WIDTH - BORDER_THICKNESS - LENGTH_OF_SLABS, settings.SCREEN_HEIGHT - BORDER_THICKNESS - POCKET_RADIUS - 20),
-            (settings.SCREEN_WIDTH - BORDER_THICKNESS, settings.SCREEN_HEIGHT - BORDER_THICKNESS - POCKET_RADIUS),
-        ),
-        (
-            (settings.SCREEN_WIDTH // 2 + POCKET_RADIUS - 1.2, settings.SCREEN_HEIGHT - BORDER_THICKNESS),
-            (settings.SCREEN_WIDTH // 2 + POCKET_RADIUS + 5, settings.SCREEN_HEIGHT - BORDER_THICKNESS - LENGTH_OF_SLABS),
-            (settings.SCREEN_WIDTH - BORDER_THICKNESS - POCKET_RADIUS - 20, settings.SCREEN_HEIGHT - BORDER_THICKNESS - LENGTH_OF_SLABS),
-            (settings.SCREEN_WIDTH - BORDER_THICKNESS - POCKET_RADIUS, settings.SCREEN_HEIGHT - BORDER_THICKNESS),
-        ),
-        (
-            (BORDER_THICKNESS + POCKET_RADIUS, settings.SCREEN_HEIGHT - BORDER_THICKNESS),
-            (BORDER_THICKNESS + POCKET_RADIUS + 20, settings.SCREEN_HEIGHT - BORDER_THICKNESS - LENGTH_OF_SLABS),
-            (settings.SCREEN_WIDTH // 2 - POCKET_RADIUS - 5, settings.SCREEN_HEIGHT - BORDER_THICKNESS - LENGTH_OF_SLABS),
-            (settings.SCREEN_WIDTH // 2 - POCKET_RADIUS + 1.2, settings.SCREEN_HEIGHT - BORDER_THICKNESS),
-        ),
-        (
-            (BORDER_THICKNESS, BORDER_THICKNESS + POCKET_RADIUS),
-            (BORDER_THICKNESS + LENGTH_OF_SLABS, BORDER_THICKNESS + POCKET_RADIUS + 20),
-            (BORDER_THICKNESS + LENGTH_OF_SLABS, settings.SCREEN_HEIGHT - BORDER_THICKNESS - POCKET_RADIUS - 20),
-            (BORDER_THICKNESS, settings.SCREEN_HEIGHT - BORDER_THICKNESS - POCKET_RADIUS),
-        ),
-    )
-
-    for slab in slab_positions:
+    for positions in SLABS:
         body = pymunk.Body(body_type=pymunk.Body.STATIC)
         body.position = ((0, 0))
 
-        shape = pymunk.Poly(body, slab)
+        shape = pymunk.Poly(body, positions)
         shape.elasticity = 0.5
 
         SPACE.add(body, shape)

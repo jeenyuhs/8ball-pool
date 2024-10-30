@@ -1,118 +1,73 @@
 import pygame
 
+from objects.ball import Ball, BallType
 import settings
+import utils
 
 
 class Table:
     def __init__(self):
-        self.balls = []
+        self.balls: list[Ball] = []
 
-    @staticmethod
-    def draw(screen) -> None:
-        POCKET_RADIUS = 30
-        BORDER_THICKNESS = 50
+    @property
+    def cue_ball(self) -> Ball:
+        return self.balls[-1]
 
-        GREEN = settings.COLORS["GREEN"]
-        DARKER_GREEN = settings.COLORS["DARKER_GREEN"]
-        WOOD = settings.COLORS["WOOD"]
-        BLACK = settings.COLORS["BLACK"]
+    def initialize_balls(self) -> None:
+        positions = []
+        dist = settings.BALL_RADIUS * 2
+        for i in range(5):
+            for j in range(4):
+                x = i * dist
+                y = j * dist + i * (dist / 2)
+                positions.append((x + 200, y + 200))
 
-        # felt
-        pygame.draw.rect(
-            screen,
-            GREEN,
+        for ball in range(15):
+            ball_type = BallType.SOLID
+            # 8ball
+            if ball + 1 == 8:
+                ball_type = BallType.EIGHT_BALL
+            # stripe
+            if ball + 1 > 8:
+                ball_type = BallType.STRIPE
+
+            print(ball + 1)
+
+            ball_obj = Ball.create(positions[ball], ball_type)
+            ball_obj.image = pygame.image.load(f"assets/images/balls/ball_{ball + 1}.png").convert_alpha()
+
+            self.balls.append(ball_obj)
+
+        cue_ball = Ball.create(
             (
-                BORDER_THICKNESS,
-                BORDER_THICKNESS,
-                settings.SCREEN_WIDTH - 2 * BORDER_THICKNESS,
-                settings.SCREEN_HEIGHT - 2 * BORDER_THICKNESS,
-            ),
+                settings.SCREEN_WIDTH / 1.5, 
+                settings.SCREEN_HEIGHT // 2 + 20
+            ), 
+            type = BallType.CUE
         )
+        cue_ball.image = pygame.image.load(f"assets/images/balls/cue_ball.png").convert_alpha()
 
-        # borders
-        pygame.draw.rect(screen, WOOD, (0, 0, settings.SCREEN_WIDTH, BORDER_THICKNESS))
-        pygame.draw.rect(
-            screen,
-            WOOD,
-            (0, settings.SCREEN_HEIGHT - BORDER_THICKNESS, settings.SCREEN_WIDTH, BORDER_THICKNESS),
-        )
-        pygame.draw.rect(screen, WOOD, (0, 0, BORDER_THICKNESS, settings.SCREEN_HEIGHT))
-        pygame.draw.rect(
-            screen,
-            WOOD,
-            (settings.SCREEN_WIDTH - BORDER_THICKNESS, 0, BORDER_THICKNESS, settings.SCREEN_HEIGHT),
-        )
-    
-        # funny thing about the middle pockets, is that they're not
-        # alligned with their corner counterparts.
+        self.balls.append(cue_ball)
 
-        # fmt: off
-        pockets = (
-            (BORDER_THICKNESS, BORDER_THICKNESS),
-            (settings.SCREEN_WIDTH // 2, BORDER_THICKNESS - 12),
-            (settings.SCREEN_WIDTH - BORDER_THICKNESS, BORDER_THICKNESS),
-            (BORDER_THICKNESS, settings.SCREEN_HEIGHT - BORDER_THICKNESS),
-            (settings.SCREEN_WIDTH // 2, settings.SCREEN_HEIGHT - BORDER_THICKNESS + 12),
-            (settings.SCREEN_WIDTH - BORDER_THICKNESS, settings.SCREEN_HEIGHT - BORDER_THICKNESS),
-        )
 
-        for pocket in pockets:
-            pygame.draw.circle(screen, BLACK, pocket, POCKET_RADIUS)
-
-        # what is the name of them?
-        LENGTH_OF_SLABS = 20
-
-        # fmt: off
-        slab_positions = (
-            (
-                (BORDER_THICKNESS + POCKET_RADIUS, BORDER_THICKNESS),
-                (BORDER_THICKNESS + POCKET_RADIUS + 15, BORDER_THICKNESS + LENGTH_OF_SLABS),
-                (settings.SCREEN_WIDTH // 2 - POCKET_RADIUS - 5, BORDER_THICKNESS + LENGTH_OF_SLABS),
-                (settings.SCREEN_WIDTH // 2 - POCKET_RADIUS + 1.2, BORDER_THICKNESS),
-            ),
-            (
-                (settings.SCREEN_WIDTH // 2 + POCKET_RADIUS - 1.2, BORDER_THICKNESS),
-                (settings.SCREEN_WIDTH // 2 + POCKET_RADIUS + 5, BORDER_THICKNESS + LENGTH_OF_SLABS),
-                (settings.SCREEN_WIDTH - BORDER_THICKNESS - POCKET_RADIUS - 20, BORDER_THICKNESS + LENGTH_OF_SLABS),
-                (settings.SCREEN_WIDTH - BORDER_THICKNESS - POCKET_RADIUS, BORDER_THICKNESS),
-            ),
-            (
-                (settings.SCREEN_WIDTH - BORDER_THICKNESS, BORDER_THICKNESS + POCKET_RADIUS),
-                (settings.SCREEN_WIDTH - BORDER_THICKNESS - LENGTH_OF_SLABS, BORDER_THICKNESS + POCKET_RADIUS + 20),
-                (settings.SCREEN_WIDTH - BORDER_THICKNESS - LENGTH_OF_SLABS, settings.SCREEN_HEIGHT - BORDER_THICKNESS - POCKET_RADIUS - 20),
-                (settings.SCREEN_WIDTH - BORDER_THICKNESS, settings.SCREEN_HEIGHT - BORDER_THICKNESS - POCKET_RADIUS),
-            ),
-            (
-                (settings.SCREEN_WIDTH // 2 + POCKET_RADIUS - 1.2, settings.SCREEN_HEIGHT - BORDER_THICKNESS),
-                (settings.SCREEN_WIDTH // 2 + POCKET_RADIUS + 5, settings.SCREEN_HEIGHT - BORDER_THICKNESS - LENGTH_OF_SLABS),
-                (settings.SCREEN_WIDTH - BORDER_THICKNESS - POCKET_RADIUS - 20, settings.SCREEN_HEIGHT - BORDER_THICKNESS - LENGTH_OF_SLABS),
-                (settings.SCREEN_WIDTH - BORDER_THICKNESS - POCKET_RADIUS, settings.SCREEN_HEIGHT - BORDER_THICKNESS),
-            ),
-            (
-                (BORDER_THICKNESS + POCKET_RADIUS, settings.SCREEN_HEIGHT - BORDER_THICKNESS),
-                (BORDER_THICKNESS + POCKET_RADIUS + 20, settings.SCREEN_HEIGHT - BORDER_THICKNESS - LENGTH_OF_SLABS),
-                (settings.SCREEN_WIDTH // 2 - POCKET_RADIUS - 5, settings.SCREEN_HEIGHT - BORDER_THICKNESS - LENGTH_OF_SLABS),
-                (settings.SCREEN_WIDTH // 2 - POCKET_RADIUS + 1.2, settings.SCREEN_HEIGHT - BORDER_THICKNESS),
-            ),
-            (
-                (BORDER_THICKNESS, BORDER_THICKNESS + POCKET_RADIUS),
-                (BORDER_THICKNESS + LENGTH_OF_SLABS, BORDER_THICKNESS + POCKET_RADIUS + 20),
-                (BORDER_THICKNESS + LENGTH_OF_SLABS, settings.SCREEN_HEIGHT - BORDER_THICKNESS - POCKET_RADIUS - 20),
-                (BORDER_THICKNESS, settings.SCREEN_HEIGHT - BORDER_THICKNESS - POCKET_RADIUS),
-            ),
-        )
+    def draw(self, surface: pygame.Surface) -> None:
+        table = pygame.image.load("assets/images/table.png").convert_alpha()
+        surface.blit(table, (0, 0))
 
         DEBUG_COLORS = (
             (255, 0, 0),    # red
             (0, 255, 0),    # green
             (0, 0, 255),    # blue
-            (255, 255, 0)   # yellow
+            (255, 255, 0),   # yellow
+            (255, 0, 255),   # magenta
+            (0, 255, 255),   # idfk
         )
 
-        for position in slab_positions:
-            pygame.draw.polygon(screen, DARKER_GREEN, position)
-
+        for positions in utils.SLABS:
             if settings.DEBUG:
                 # draw each point, depending on their color
-                for index, point_position in enumerate(position):
-                    pygame.draw.circle(screen, DEBUG_COLORS[index], point_position, 5)
+                for index, point in enumerate(positions):
+                    pygame.draw.circle(surface, DEBUG_COLORS[index % len(DEBUG_COLORS)], point, 5)
+
+        for ball in self.balls:
+            surface.blit(ball.image, (ball.body.position[0] - settings.BALL_RADIUS, ball.body.position[1] - settings.BALL_RADIUS))
