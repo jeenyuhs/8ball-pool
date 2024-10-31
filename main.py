@@ -3,7 +3,9 @@ import time
 import pygame
 import pymunk
 import pymunk.pygame_util
+from objects.ball import BallType
 from objects.cue import Cue
+from objects.player import FoulType
 from objects.table import Table
 import settings
 import utils
@@ -43,7 +45,7 @@ def game():
         [86, 807]
     )
     POCKET_RADIUS = 35
-    flip_turns = True
+    foul: FoulType | None = None
 
     while running:
         dt = clock.tick(settings.FPS)
@@ -81,11 +83,26 @@ def game():
         if not any_moving and balls_moving:
             balls_moving = False
 
-            if not table.shooter.has_potted_new_balls:
-                table.shooter.is_shooting = False
-                table.who_is_waiting.is_shooting = True
+            if not table.shooter.has_potted_new_balls and not foul:
+                table.take_turns()
+                print("switched turns, no foul")
             else:
                 table.shooter.has_potted_new_balls = False
+                print("potted new balls, shouldn't switch")
+
+            match foul:
+                case FoulType.POTTED_CUE_BALL:
+                    table.take_turns()
+                    table.cue_ball.body.position = (800, 400)
+                    table.cue_ball.hide = False
+                    foul = None
+                case FoulType.POTTED_WRONG_BALL:
+                    table.take_turns()
+                    foul = None
+                case FoulType.POTTED_8BALL_EARLY:
+                    # opponent win
+                    print("opponent won!")
+                    foul = None
 
             # wait one second
             time.sleep(1)
@@ -107,7 +124,7 @@ def game():
                 # the cue is moving towards the balls, and therefore the force 
                 # should start to be calculated.
                 if _previous_y_diff != 0 and (y_diff - _previous_y_diff) < 0:
-                    # min speed = 0.5, max speed = 5
+                    # min speed = 0.5, max speed = 6
                     speed = min(6, max(0.5, (_previous_y_diff - y_diff) / dt))
 
                 _previous_y_diff = y_diff
@@ -137,15 +154,41 @@ def game():
 
                     # threshold should be 45% of POCKET_RADIUS
                     if dist_to_pocket <= POCKET_RADIUS * (1 - 0.45):
-                        if table.shooter.has_ball_type == None:
+                        if ball.type == BallType.CUE:
+                            print("cue ball potted, foul")
+
+                            foul = FoulType.POTTED_CUE_BALL
+                            table.cue_ball.hide = True
+                            table.cue_ball.stop()
+
+                            continue
+
+                        print(ball.__dict__)
+                        if table.shooter.has_ball_type == None or table.shooter.has_ball_type == ball.type:
                             table.shooter.has_ball_type = ball.type
+                            table.who_is_waiting.has_ball_type = ball.type.reverse()
+
                             table.shooter.potted_balls.append(ball)
+
                             table.shooter.has_potted_new_balls = True
+                            print("shooter potted their own ball in")
 
                         if table.shooter.has_ball_type != ball.type:
+                            if not table.shooter.has_potted_new_balls:
+                                print("shooter potted the wrong ball first")
+                                foul = FoulType.POTTED_WRONG_BALL
+
                             table.who_is_waiting.potted_balls.append(ball)
-                            table.shooter.is_shooting = False
-                            table.who_is_waiting.is_shooting = True
+
+                        if len(table.shooter.potted_balls) < 7 and ball.type == BallType.EIGHT_BALL:
+                            print("shooter potted the 8ball too early. loss")
+                            foul = FoulType.POTTED_8BALL_EARLY
+
+                            table.balls.remove(ball)
+                            utils.SPACE.remove(ball.body)
+                            
+                            break
+
 
                         table.balls.remove(ball)
                         utils.SPACE.remove(ball.body)

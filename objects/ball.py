@@ -1,4 +1,5 @@
 from enum import IntEnum
+from pygame import Surface
 import pymunk
 
 import settings
@@ -11,12 +12,20 @@ class BallType(IntEnum):
 
     EIGHT_BALL = 3
 
+    def reverse(self) -> None:
+        if self == BallType.SOLID:
+            return BallType.STRIPE
+        
+        return BallType.SOLID
+
 class Ball(pymunk.Shape):
     def __init__(self, shape: pymunk.Shape) -> None:
         super().__init__(shape)
 
         self.type: BallType = BallType.SOLID
         self.image = None 
+
+        self.hide: bool = False
 
     @classmethod
     def create(cls, position: tuple[int, int, int], type: BallType) -> "Ball":
@@ -37,4 +46,10 @@ class Ball(pymunk.Shape):
         ball.type = type
 
         return ball
+    
+    def draw(self, surface: Surface) -> None:
+        if not self.hide:
+            surface.blit(self.image, (self.body.position[0] - settings.BALL_RADIUS, self.body.position[1] - settings.BALL_RADIUS))
 
+    def stop(self) -> None:
+        self.body.velocity = (0, 0)

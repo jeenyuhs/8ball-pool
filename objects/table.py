@@ -22,6 +22,10 @@ class Table:
     @property
     def who_is_waiting(self) -> Player:
         return self.players[0] if not self.players[0].is_shooting else self.players[1]
+    
+    def take_turns(self) -> None:
+        self.shooter.is_shooting = False
+        self.who_is_waiting.is_shooting = True
 
     def initialize_balls(self) -> None:
         positions = []
@@ -80,7 +84,7 @@ class Table:
                     pygame.draw.circle(surface, DEBUG_COLORS[index % len(DEBUG_COLORS)], point, 5)
 
         for ball in self.balls:
-            surface.blit(ball.image, (ball.body.position[0] - settings.BALL_RADIUS, ball.body.position[1] - settings.BALL_RADIUS))
+            ball.draw(surface)
 
         # template
         self.players.append(Player("Simon"))
