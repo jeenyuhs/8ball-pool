@@ -34,6 +34,17 @@ def game():
 
     _previous_y_diff = 0
 
+    pockets = (
+        [86, 84],
+        [798, 61],
+        [1512, 83],
+        [1512, 809],
+        [798, 833],
+        [86, 807]
+    )
+    POCKET_RADIUS = 35
+    flip_turns = True
+
     while running:
         dt = clock.tick(settings.FPS)
         utils.SPACE.step(1 / settings.FPS)
@@ -69,6 +80,12 @@ def game():
 
         if not any_moving and balls_moving:
             balls_moving = False
+
+            if not table.shooter.has_potted_new_balls:
+                table.shooter.is_shooting = False
+                table.who_is_waiting.is_shooting = True
+            else:
+                table.shooter.has_potted_new_balls = False
 
             # wait one second
             time.sleep(1)
@@ -109,9 +126,35 @@ def game():
                     )
             
             cue.draw(surface)
+        else:
+            for ball in table.balls:
+                # skip all balls that aren't moving
+                if int(ball.body.velocity[0]) == 0 or int(ball.body.velocity[1]) == 0:
+                    continue
+
+                for pocket in pockets:
+                    dist_to_pocket = math.dist(ball.body.position, pocket)
+
+                    # threshold should be 45% of POCKET_RADIUS
+                    if dist_to_pocket <= POCKET_RADIUS * (1 - 0.45):
+                        if table.shooter.has_ball_type == None:
+                            table.shooter.has_ball_type = ball.type
+                            table.shooter.potted_balls.append(ball)
+                            table.shooter.has_potted_new_balls = True
+
+                        if table.shooter.has_ball_type != ball.type:
+                            table.who_is_waiting.potted_balls.append(ball)
+                            table.shooter.is_shooting = False
+                            table.who_is_waiting.is_shooting = True
+
+                        table.balls.remove(ball)
+                        utils.SPACE.remove(ball.body)
 
         if settings.DEBUG:
             utils.SPACE.debug_draw(draw_options)
+
+            for pocket in pockets:
+                pygame.draw.circle(surface, (255, 0, 0), pocket, POCKET_RADIUS)
 
         pygame.display.update()
     

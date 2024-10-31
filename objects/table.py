@@ -1,6 +1,7 @@
 import pygame
 
 from objects.ball import Ball, BallType
+from objects.player import Player
 import settings
 import utils
 
@@ -8,10 +9,19 @@ import utils
 class Table:
     def __init__(self):
         self.balls: list[Ball] = []
+        self.players: list[Player] = []
 
     @property
     def cue_ball(self) -> Ball:
         return self.balls[-1]
+    
+    @property
+    def shooter(self) -> Player:
+        return self.players[0] if self.players[0].is_shooting else self.players[1]
+    
+    @property
+    def who_is_waiting(self) -> Player:
+        return self.players[0] if not self.players[0].is_shooting else self.players[1]
 
     def initialize_balls(self) -> None:
         positions = []
@@ -71,3 +81,6 @@ class Table:
 
         for ball in self.balls:
             surface.blit(ball.image, (ball.body.position[0] - settings.BALL_RADIUS, ball.body.position[1] - settings.BALL_RADIUS))
+
+        # template
+        self.players.append(Player("Simon"))
