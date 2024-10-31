@@ -13,7 +13,9 @@ import utils
 
 def game():
     pygame.init()
+    pygame.font.init()
 
+    font = pygame.font.SysFont("Comic Sans MS", 30)
     surface = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT))
     pygame.display.set_caption("DDU Projekt - 8ball")
 
@@ -27,8 +29,12 @@ def game():
     aiming = False
     aiming_base_y = 0
 
+    table_image = pygame.image.load("assets/images/table.png").convert_alpha()
+    wood_panel_image = pygame.image.load("assets/images/bottom_panel.png").convert_alpha()
+
     table = Table()
     table.initialize_balls()
+    table.initialize_players()
 
     utils.initialize_slab_collision_detection()
 
@@ -37,15 +43,17 @@ def game():
     _previous_y_diff = 0
 
     pockets = (
-        [86, 84],
-        [798, 61],
-        [1512, 83],
-        [1512, 809],
-        [798, 833],
-        [86, 807]
+        [73, 75],
+        [797, 53],
+        [1517, 72],
+        [1517, 811],
+        [796, 836],
+        [73, 812]
     )
     POCKET_RADIUS = 35
     foul: FoulType | None = None
+
+    game_over = False
 
     while running:
         dt = clock.tick(settings.FPS)
@@ -76,18 +84,30 @@ def game():
             if event.type == pygame.QUIT:
                 running = False
 
-        table.draw(surface)
+        table.draw(surface, table_image, wood_panel_image, font)
 
+        if game_over:
+            winner = table.get_winner()
+            length = winner.username + " won!"
+            pos = (settings.SCREEN_WIDTH // 2 - len(length), (settings.SCREEN_HEIGHT - settings.BOTTOM_PANEL_PADDING) // 2)
+
+            text_surface = font.render(winner.username + " won!", False, (255, 255, 255))
+            surface.blit(text_surface, pos)
+
+            pygame.display.update()
+            continue
+        
         any_moving = any(int(ball.body.velocity[0]) != 0 or int(ball.body.velocity[1]) != 0 for ball in table.balls)
 
         if not any_moving and balls_moving:
             balls_moving = False
+            aiming = False
 
-            if not table.shooter.has_potted_new_balls and not foul:
+            if not table.get_shooter().has_potted_new_balls and not foul:
                 table.take_turns()
                 print("switched turns, no foul")
             else:
-                table.shooter.has_potted_new_balls = False
+                table.get_shooter().has_potted_new_balls = False
                 print("potted new balls, shouldn't switch")
 
             match foul:
@@ -101,11 +121,13 @@ def game():
                     foul = None
                 case FoulType.POTTED_8BALL_EARLY:
                     # opponent win
-                    print("opponent won!")
+                    table.get_shooter().lost = True
+                    table.get_who_is_waiting().won = True
+                    game_over = True
                     foul = None
 
             # wait one second
-            time.sleep(1)
+            # time.sleep(1)
 
         balls_moving = any_moving
 
@@ -134,7 +156,7 @@ def game():
                     x_impulse = math.cos(math.radians(cue.angle))
                     y_impulse = math.sin(math.radians(cue.angle))
 
-                    table.cue_ball.body.apply_impulse_at_local_point((2000 * -x_impulse * speed, 2000 * y_impulse * speed), (0, 0))
+                    table.cue_ball.body.apply_impulse_at_local_point((750 * -x_impulse * speed, 750 * y_impulse * speed), (0, 0))
                 else:
                     cue_angle = math.radians(cue.angle)
                     cue.rect.center = (
@@ -149,11 +171,19 @@ def game():
                 if int(ball.body.velocity[0]) == 0 or int(ball.body.velocity[1]) == 0:
                     continue
 
+                # retarded ass pymunk retard monkey ass fucking library
+
+                # collision detection on pymunk is made by some absolute monkeys
+                # and for that reason stuff can go out of bounds, simply phase through
+                # the cushion. i ahte this fucking project
+                out_of_bounds = (ball.body.position[0] < 0 or ball.body.position[0] > settings.SCREEN_WIDTH) or \
+                                (ball.body.position[1] < 0 or ball.body.position[1] > settings.SCREEN_HEIGHT - settings.BOTTOM_PANEL_PADDING)
+                
                 for pocket in pockets:
                     dist_to_pocket = math.dist(ball.body.position, pocket)
 
-                    # threshold should be 45% of POCKET_RADIUS
-                    if dist_to_pocket <= POCKET_RADIUS * (1 - 0.45):
+                    # threshold should be 50% of POCKET_RADIUS
+                    if dist_to_pocket <= POCKET_RADIUS * 0.75 or out_of_bounds:
                         if ball.type == BallType.CUE:
                             print("cue ball potted, foul")
 
@@ -163,35 +193,48 @@ def game():
 
                             continue
 
-                        print(ball.__dict__)
-                        if table.shooter.has_ball_type == None or table.shooter.has_ball_type == ball.type:
-                            table.shooter.has_ball_type = ball.type
-                            table.who_is_waiting.has_ball_type = ball.type.reverse()
+                        shooter = table.get_shooter()
+                        who_is_waiting = table.get_who_is_waiting()
 
-                            table.shooter.potted_balls.append(ball)
+                        if shooter.has_ball_type == None or shooter.has_ball_type == ball.type:
+                            shooter.has_ball_type = ball.type
+                            who_is_waiting.has_ball_type = ball.type.reverse()
 
-                            table.shooter.has_potted_new_balls = True
+                            shooter.potted_balls.append(ball)
+
+                            shooter.has_potted_new_balls = True
                             print("shooter potted their own ball in")
 
-                        if table.shooter.has_ball_type != ball.type:
-                            if not table.shooter.has_potted_new_balls:
+                        if shooter.has_ball_type != ball.type and ball.type != BallType.EIGHT_BALL:
+                            if not shooter.has_potted_new_balls and not out_of_bounds:
                                 print("shooter potted the wrong ball first")
                                 foul = FoulType.POTTED_WRONG_BALL
 
-                            table.who_is_waiting.potted_balls.append(ball)
+                            who_is_waiting.potted_balls.append(ball)
 
-                        if len(table.shooter.potted_balls) < 7 and ball.type == BallType.EIGHT_BALL:
+                        if len(shooter.potted_balls) < 7 and ball.type == BallType.EIGHT_BALL:
                             print("shooter potted the 8ball too early. loss")
                             foul = FoulType.POTTED_8BALL_EARLY
 
                             table.balls.remove(ball)
                             utils.SPACE.remove(ball.body)
-                            
+
                             break
 
+                        if len(shooter.potted_balls) == 7 and ball.type == BallType.EIGHT_BALL:
+                            shooter.won = True
+                            game_over = True
 
-                        table.balls.remove(ball)
-                        utils.SPACE.remove(ball.body)
+                            table.balls.remove(ball)
+                            utils.SPACE.remove(ball.body)
+
+                            break
+
+                        if ball in table.balls:
+                            table.balls.remove(ball)
+                        
+                        if ball in utils.SPACE.bodies:
+                            utils.SPACE.remove(ball.body)
 
         if settings.DEBUG:
             utils.SPACE.debug_draw(draw_options)

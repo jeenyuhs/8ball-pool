@@ -15,37 +15,51 @@ class Table:
     def cue_ball(self) -> Ball:
         return self.balls[-1]
     
-    @property
-    def shooter(self) -> Player:
-        return self.players[0] if self.players[0].is_shooting else self.players[1]
+    def get_shooter(self) -> Player:
+        for player in self.players:
+            if player.is_shooting:
+                return player
     
-    @property
-    def who_is_waiting(self) -> Player:
-        return self.players[0] if not self.players[0].is_shooting else self.players[1]
+    def get_who_is_waiting(self) -> Player:
+        for player in self.players:
+            if not player.is_shooting:
+                return player
+            
+    def get_winner(self) -> Player | None:
+        for player in self.players:
+            if player.won:
+                return player
+            
+    def get_loser(self) -> Player | None:
+        for player in self.players:
+            if player.lost:
+                return player
     
     def take_turns(self) -> None:
-        self.shooter.is_shooting = False
-        self.who_is_waiting.is_shooting = True
+        for player in self.players:
+            if player.is_shooting:
+                player.is_shooting = False
+            elif not player.is_shooting:
+                player.is_shooting = True
 
     def initialize_balls(self) -> None:
         positions = []
-        dist = settings.BALL_RADIUS * 2
-        for i in range(5):
-            for j in range(4):
-                x = i * dist
-                y = j * dist + i * (dist / 2)
-                positions.append((x + 200, y + 200))
+        diameter = settings.BALL_RADIUS * 2
+        columns = 5
+        for i in range(columns):
+            for j in range(columns - i):
+                x = i * diameter
+                y = j * diameter + i * (diameter / 2)
+                positions.append((x + settings.SCREEN_WIDTH / 4, y + (settings.SCREEN_HEIGHT - settings.BOTTOM_PANEL_PADDING) // 2 - diameter * 2.5))
 
         for ball in range(15):
             ball_type = BallType.SOLID
-            # 8ball
+            
             if ball + 1 == 8:
                 ball_type = BallType.EIGHT_BALL
-            # stripe
+            
             if ball + 1 > 8:
                 ball_type = BallType.STRIPE
-
-            print(ball + 1)
 
             ball_obj = Ball.create(positions[ball], ball_type)
             ball_obj.image = pygame.image.load(f"assets/images/balls/ball_{ball + 1}.png").convert_alpha()
@@ -55,7 +69,7 @@ class Table:
         cue_ball = Ball.create(
             (
                 settings.SCREEN_WIDTH / 1.5, 
-                settings.SCREEN_HEIGHT // 2 + 20
+                (settings.SCREEN_HEIGHT - settings.BOTTOM_PANEL_PADDING) // 2
             ), 
             type = BallType.CUE
         )
@@ -63,10 +77,13 @@ class Table:
 
         self.balls.append(cue_ball)
 
+    def initialize_players(self) -> None:
+        self.players.append(Player("Simon", True))
+        self.players.append(Player("Noob"))
 
-    def draw(self, surface: pygame.Surface) -> None:
-        table = pygame.image.load("assets/images/table.png").convert_alpha()
-        surface.blit(table, (0, 0))
+    def draw(self, surface: pygame.Surface, table_image, wood_panel_image, font) -> None:
+        surface.blit(wood_panel_image, (0, 0))
+        surface.blit(table_image, (0, 0))
 
         DEBUG_COLORS = (
             (255, 0, 0),    # red
@@ -86,5 +103,5 @@ class Table:
         for ball in self.balls:
             ball.draw(surface)
 
-        # template
-        self.players.append(Player("Simon"))
+        for i, player in enumerate(self.players):
+            player.draw(surface, (settings.SCREEN_WIDTH / (3 * (i + 1) / 2), settings.SCREEN_HEIGHT - settings.BOTTOM_PANEL_PADDING / 2), font)
