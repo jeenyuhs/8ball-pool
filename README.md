@@ -10,6 +10,7 @@ For at tjekke hvordan man installere poetry, kig [her](https://python-poetry.org
 $ git clone https://github.com/jeenyuhs/8ball-pool
   ...
 
+$ cd 8ball-pool
 $ poetry install
 $ python main.py
 ```
