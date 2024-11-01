@@ -113,6 +113,10 @@ def game():
             match foul:
                 case FoulType.POTTED_CUE_BALL:
                     table.take_turns()
+
+                    # originally, the player should be allowed to
+                    # freely move around the cue ball wherever there 
+                    # is space, but i am not feeling like implementing it.
                     table.cue_ball.body.position = (800, 400)
                     table.cue_ball.hide = False
                     foul = None
@@ -125,9 +129,6 @@ def game():
                     table.get_who_is_waiting().won = True
                     game_over = True
                     foul = None
-
-            # wait one second
-            # time.sleep(1)
 
         balls_moving = any_moving
 
@@ -179,6 +180,10 @@ def game():
                 out_of_bounds = (ball.body.position[0] < 0 or ball.body.position[0] > settings.SCREEN_WIDTH) or \
                                 (ball.body.position[1] < 0 or ball.body.position[1] > settings.SCREEN_HEIGHT - settings.BOTTOM_PANEL_PADDING)
                 
+                # ^^^ if a ball happens to be out of bounds
+                # we simply allow it to be potted and counts
+                # as a point.
+                
                 for pocket in pockets:
                     dist_to_pocket = math.dist(ball.body.position, pocket)
 
@@ -196,6 +201,8 @@ def game():
                         shooter = table.get_shooter()
                         who_is_waiting = table.get_who_is_waiting()
 
+                        # if none of the players have any assigned ball type. the first one to go in
+                        # should be the shooters ball type, and then the opponent will get the other one.
                         if shooter.has_ball_type == None or shooter.has_ball_type == ball.type:
                             shooter.has_ball_type = ball.type
                             who_is_waiting.has_ball_type = ball.type.reverse()
@@ -205,13 +212,20 @@ def game():
                             shooter.has_potted_new_balls = True
                             print("shooter potted their own ball in")
 
+                        # if the shooter shoots a ball that isn't theirs in
+                        # and it's not the 8 ball aswell, the opponent should
+                        # get the point
                         if shooter.has_ball_type != ball.type and ball.type != BallType.EIGHT_BALL:
+                            # although, if the shooter hasn't potted any other balls than
+                            # that one, it's a foul (i actually can't remember if this is a foul or not lol)
                             if not shooter.has_potted_new_balls and not out_of_bounds:
                                 print("shooter potted the wrong ball first")
                                 foul = FoulType.POTTED_WRONG_BALL
 
                             who_is_waiting.potted_balls.append(ball)
 
+                        # if the shooter pots the 8 ball, before having potted all of the other balls
+                        # it's a foul and resulting the opponent to win instantly.
                         if len(shooter.potted_balls) < 7 and ball.type == BallType.EIGHT_BALL:
                             print("shooter potted the 8ball too early. loss")
                             foul = FoulType.POTTED_8BALL_EARLY
@@ -220,7 +234,8 @@ def game():
                             utils.SPACE.remove(ball.body)
 
                             break
-
+                        
+                        # this is just the game ending shot.
                         if len(shooter.potted_balls) == 7 and ball.type == BallType.EIGHT_BALL:
                             shooter.won = True
                             game_over = True

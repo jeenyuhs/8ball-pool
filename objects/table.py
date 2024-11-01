@@ -68,7 +68,7 @@ class Table:
 
         cue_ball = Ball.create(
             (
-                settings.SCREEN_WIDTH / 1.5, 
+                settings.SCREEN_WIDTH // 1.5, 
                 (settings.SCREEN_HEIGHT - settings.BOTTOM_PANEL_PADDING) // 2
             ), 
             type = BallType.CUE
