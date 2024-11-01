@@ -5,11 +5,11 @@ Det her projekt gør brug af pygame og pymunk. Der har været en langrække prob
 Jeg havde højere aspirationer for projektet, herunder en gameserver, som kunne tillade folk at spille fra andre computer af istedet for den samme, som det nu er designet som. 
 
 # Setup
-For at tjekke hvordan man installere poetry, kig (her)[https://python-poetry.org/docs/]
-``
+For at tjekke hvordan man installere poetry, kig [her](https://python-poetry.org/docs/)
+```
 $ git clone https://github.com/jeenyuhs/8ball-pool
   ...
 
 $ poetry install
 $ python main.py
-``
+```
